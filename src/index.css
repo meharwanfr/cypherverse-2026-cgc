@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: #ddd2bb;
+    color: #2a2520;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    /* Crumpled recycled paper — deep wrinkles + fine grain + stains */
+    background-image:
+      radial-gradient(ellipse at 12% 8%, rgba(255,250,235,0.35) 0%, transparent 35%),
+      radial-gradient(ellipse at 88% 35%, rgba(210,195,170,0.3) 0%, transparent 40%),
+      radial-gradient(ellipse at 45% 92%, rgba(255,245,225,0.2) 0%, transparent 35%),
+      radial-gradient(ellipse at 75% 65%, rgba(190,175,150,0.2) 0%, transparent 30%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cfilter id='wrinkle'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.018' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.13 0 0 0 0 0.10 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wrinkle)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250' viewBox='0 0 250 250'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0 0.09 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='stain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.03' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.48 0 0 0 0 0.38 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23stain)'/%3E%3C/svg%3E");
+  }
+  ::selection {
+    background: #f4d35e;
+    color: #2a2520;
+  }
+}
+
+@layer components {
+  /* Paper piece — the core scrapbook element */
+  .paper {
+    @apply border border-ink/25 transition-all duration-300 ease-out;
+    background-color: #faf5ea;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)'/%3E%3C/svg%3E");
+    box-shadow:
+      1px 1px 0 rgba(42,37,32,0.06),
+      3px 4px 8px -2px rgba(42,37,32,0.18),
+      4px 5px 0 -1px rgba(42,37,32,0.04);
+  }
+  .paper-hover:hover {
+    transform: translateY(-3px) rotate(var(--tilt, 0deg));
+    box-shadow:
+      2px 2px 0 rgba(42,37,32,0.08),
+      6px 10px 16px -3px rgba(42,37,32,0.25),
+      7px 11px 0 -1px rgba(42,37,32,0.05);
+  }
+
+  /* Colored paper — for sticky notes, tabs, etc. */
+  .paper-colored {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cfilter id='pcn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pcn)'/%3E%3C/svg%3E");
+  }
+
+  /* Notebook paper — lined sheet */
+  .notebook-paper {
+    background-color: #faf5ea;
+    background-image:
+      repeating-linear-gradient(
+        transparent,
+        transparent 27px,
+        rgba(138, 184, 212, 0.25) 27px,
+        rgba(138, 184, 212, 0.25) 28px
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cfilter id='npn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23npn)'/%3E%3C/svg%3E");
+  }
+
+  /* Press-down button feel — like pressing into paper */
+  .btn-press {
+    @apply transition-all duration-150;
+  }
+  .btn-press:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      2px 2px 0 rgba(42,37,32,0.08),
+      5px 7px 12px -2px rgba(42,37,32,0.22);
+  }
+  .btn-press:active {
+    transform: translateY(2px) !important;
+    box-shadow:
+      0px 0px 0 rgba(42,37,32,0.05),
+      1px 2px 4px -1px rgba(42,37,32,0.12) !important;
+  }
+
+  /* Torn paper edges — bottom */
+  .torn-bottom {
+    clip-path: polygon(
+      0 0, 100% 0, 100% 94%, 97% 99%, 93% 95%, 88% 100%, 83% 96%,
+      78% 100%, 73% 95%, 68% 99%, 63% 96%, 58% 100%, 53% 95%,
+      48% 99%, 43% 96%, 38% 100%, 33% 95%, 28% 99%, 23% 96%,
+      18% 100%, 13% 95%, 8% 99%, 3% 96%, 0 100%
+    );
+  }
+  /* Torn paper edges — all sides */
+  .torn-all {
+    clip-path: polygon(
+      2% 3%, 8% 0%, 18% 2%, 28% 0%, 38% 3%, 48% 1%, 58% 0%, 68% 2%, 78% 0%, 88% 3%, 96% 1%, 100% 4%,
+      98% 12%, 100% 22%, 97% 32%, 100% 42%, 98% 52%, 100% 62%, 97% 72%, 100% 82%, 98% 92%, 100% 98%,
+      92% 100%, 82% 97%, 72% 100%, 62% 98%, 52% 100%, 42% 97%, 32% 100%, 22% 98%, 12% 100%, 2% 97%, 0 95%,
+      3% 85%, 0 75%, 2% 65%, 0 55%, 3% 45%, 0 35%, 2% 25%, 0 15%, 3% 8%, 0 4%
+    );
+  }
+  /* Torn strip — for section headings */
+  .torn-strip {
+    clip-path: polygon(
+      1% 8%, 6% 0%, 14% 6%, 22% 1%, 30% 8%, 38% 0%, 46% 6%, 54% 1%, 62% 8%, 70% 0%, 78% 6%, 86% 1%, 94% 8%, 99% 2%,
+      100% 92%, 94% 100%, 86% 94%, 78% 100%, 70% 93%, 62% 100%, 54% 94%, 46% 100%, 38% 93%, 30% 100%, 22% 94%, 14% 100%, 6% 93%, 0 98%
+    );
+  }
+
+  /* Tape piece — translucent masking tape */
+  .tape-piece {
+    position: absolute;
+    background: rgba(255, 243, 200, 0.65);
+    border: 1px solid rgba(42, 37, 32, 0.08);
+    box-shadow: 0 1px 3px rgba(42, 37, 32, 0.12);
+    pointer-events: none;
+  }
+  .tape-piece::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.95 0 0 0 0 0.8 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E");
+  }
+
+  /* Pixel display heading — chunky retro-game font */
+  .cutout-heading {
+    font-family: 'Pixelify Sans', monospace;
+    letter-spacing: 0.01em;
+    text-shadow: 1px 1px 0 rgba(42,37,32,0.08);
+  }
+
+  .doodle-stroke {
+    fill: none;
+    stroke: #2a2520;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@layer utilities {
+  .rotate-tilt-l { --tilt: -1.5deg; transform: rotate(-1.5deg); }
+  .rotate-tilt-r { --tilt: 1.5deg; transform: rotate(1.5deg); }
+  .rotate-tilt-3l { --tilt: -3deg; transform: rotate(-3deg); }
+  .rotate-tilt-3r { --tilt: 3deg; transform: rotate(3deg); }
+  .rotate-tilt-5l { --tilt: -5deg; transform: rotate(-5deg); }
+  .rotate-tilt-5r { --tilt: 5deg; transform: rotate(5deg); }
+  .text-stroke-ink {
+    -webkit-text-stroke: 1.5px #2a2520;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .stagger-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: stagger-up 0.5s ease-out forwards;
+  }
+}
+
+@keyframes stagger-up {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wiggle-hover {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(120,170,140,0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(120,170,140,0); }
+  100% { box-shadow: 0 0 0 0 rgba(120,170,140,0); }
+}
+@keyframes bookmark-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35) rotate(-8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes check-bounce {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes page-turn {
+  0% { opacity: 0; transform: rotateY(-15deg) translateX(20px); }
+  100% { opacity: 1; transform: rotateY(0) translateX(0); }
+}
+
+.animate-pulse-ring { animation: pulse-ring 0.8s ease-out; }
+.animate-bookmark-pop { animation: bookmark-pop 0.4s ease-out; }
+.animate-check-bounce { animation: check-bounce 0.4s ease-out; }
+.animate-wiggle-hover { animation: wiggle-hover 0.4s ease-in-out; }
+.animate-page-turn { animation: page-turn 0.5s ease-out; }
+
+input[type='range'].doodle-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #2a2520;
+  border-radius: 999px;
+  outline: none;
+}
+input[type='range'].doodle-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #f4d35e;
+  border: 2px solid #2a2520;
+  cursor: pointer;
+}
+input[type='range'].doodle-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #f4d35e;
+  border: 2px solid #2a2520;
+  cursor: pointer;
+}
