@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, CalendarCheck, Rocket, IdCard, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard,
+  BookOpen,
+  CalendarCheck,
+  Rocket,
+  IdCard,
+  WalletCards,
+  Menu,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Star, Squiggle, Sparkle, PaperClip } from '@/components/Doodles';
 import { student } from '@/data/mock';
@@ -10,6 +19,7 @@ export type Page =
   | 'attendance'
   | 'opportunities'
   | 'profile'
+  | 'wallet'
   | 'health';
 
 type NavItem = {
@@ -25,6 +35,7 @@ const navItems: NavItem[] = [
   { id: 'resources', label: 'Study Stuff', icon: BookOpen, color: 'bg-scrap-blue', rotate: 'rotate-tilt-r' },
   { id: 'attendance', label: 'Attendance', icon: CalendarCheck, color: 'bg-scrap-sage', rotate: 'rotate-tilt-l' },
   { id: 'opportunities', label: 'Opportunities', icon: Rocket, color: 'bg-scrap-coral', rotate: 'rotate-tilt-r' },
+  { id: 'wallet', label: 'Campus Wallet', icon: WalletCards, color: 'bg-scrap-yellow', rotate: 'rotate-tilt-r' },
   { id: 'profile', label: 'My Card', icon: IdCard, color: 'bg-scrap-pink', rotate: 'rotate-tilt-l' },
 ];
 

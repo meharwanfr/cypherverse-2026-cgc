@@ -1,57 +1,55 @@
-import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import {
   Footprints,
-  Flame,
+  HeartPulse,
   Droplets,
   Moon,
+  Flame,
   Plus,
   Minus,
+  Trophy,
   TrendingUp,
-  HeartPulse,
 } from 'lucide-react';
 
-import { StickerCard, Badge, ProgressBar, SectionHeading } from '@/components/Sticker';
+import {
+  StickerCard,
+  Badge,
+  SectionHeading,
+} from '@/components/Sticker';
 import { DoodleField } from '@/components/DoodleField';
 import {
-  SunRays,
+  Star,
   Squiggle,
-  ZigZag,
-  Coffee,
-  Sparkle,
+  SunRays,
 } from '@/components/Doodles';
+import { cn } from '@/lib/utils';
 
-const weeklySteps = [
-  { day: 'Mon', steps: 6840 },
-  { day: 'Tue', steps: 8210 },
-  { day: 'Wed', steps: 7430 },
-  { day: 'Thu', steps: 9120 },
-  { day: 'Fri', steps: 6350 },
-  { day: 'Sat', steps: 10420 },
-  { day: 'Sun', steps: 7842 },
-];
+const DAILY_STEP_GOAL = 10000;
 
-const healthStats = [
+const activities = [
   {
-    label: 'Calories',
-    value: '412',
-    unit: 'kcal',
-    icon: Flame,
-    color: 'bg-scrap-coral',
+    id: 1,
+    title: 'Morning walk',
+    steps: '2,340 steps',
+    time: '8:10 AM',
+    icon: Footprints,
+    color: 'bg-scrap-sage',
   },
   {
-    label: 'Water',
-    value: '5',
-    unit: 'glasses',
-    icon: Droplets,
+    id: 2,
+    title: 'College commute',
+    steps: '3,120 steps',
+    time: '11:25 AM',
+    icon: Footprints,
     color: 'bg-scrap-blue',
   },
   {
-    label: 'Sleep',
-    value: '7.2',
-    unit: 'hours',
-    icon: Moon,
-    color: 'bg-scrap-lavender',
+    id: 3,
+    title: 'Evening walk',
+    steps: '2,382 steps',
+    time: '7:15 PM',
+    icon: Footprints,
+    color: 'bg-scrap-yellow',
   },
 ];
 
@@ -59,19 +57,28 @@ export function Health() {
   const [steps, setSteps] = useState(7842);
   const [water, setWater] = useState(5);
 
-  const stepGoal = 10000;
-  const stepPercentage = Math.min((steps / stepGoal) * 100, 100);
+  const stepPercentage = Math.min(
+    Math.round((steps / DAILY_STEP_GOAL) * 100),
+    100
+  );
 
-  function addSteps() {
-    setSteps((prev) => Math.min(prev + 500, 20000));
+  const remainingSteps = Math.max(
+    DAILY_STEP_GOAL - steps,
+    0
+  );
+
+  function addSteps(amount: number) {
+    setSteps((previous) =>
+      Math.min(previous + amount, 20000)
+    );
   }
 
   function addWater() {
-    setWater((prev) => Math.min(prev + 1, 12));
+    setWater((previous) => Math.min(previous + 1, 8));
   }
 
   function removeWater() {
-    setWater((prev) => Math.max(prev - 1, 0));
+    setWater((previous) => Math.max(previous - 1, 0));
   }
 
   return (
@@ -79,33 +86,33 @@ export function Health() {
 
       {/* Header */}
       <div className="relative">
-        <div className="paper-colored torn-bottom relative overflow-hidden rounded-rough border border-ink/25 bg-scrap-sage shadow-paper-lg">
+        <div className="paper-colored torn-bottom relative overflow-hidden rounded-rough border border-ink/25 bg-scrap-mint shadow-paper-lg">
 
           <div className="tape-piece absolute left-1/2 top-3 h-6 w-24 -translate-x-1/2 -rotate-2" />
 
-          <SunRays className="absolute right-8 top-8 h-12 w-12 opacity-25" />
-          <Sparkle className="absolute bottom-6 right-24 h-6 w-6 opacity-30" />
-          <ZigZag className="absolute bottom-3 left-4 h-4 w-32 opacity-25" />
+          <SunRays className="absolute right-8 top-7 h-14 w-14 opacity-25" />
 
           <div className="relative p-7 pt-10 md:p-9 md:pt-12">
-            <p className="font-hand text-2xl text-ink/65">
-              take care of yourself
+            <p className="font-hand text-2xl text-ink/60">
+              take care of yourself,
             </p>
 
             <h1 className="cutout-heading text-4xl leading-tight md:text-5xl">
-              health check 🌱
+              Health Check
+              <span className="ml-2">❤️</span>
             </h1>
 
             <p className="mt-2 font-hand text-xl text-ink/60">
-              because surviving college shouldn't require a respawn.
+              because debugging your body is harder than debugging code.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Main step tracker */}
+      {/* Main stats */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
 
+        {/* Steps */}
         <StickerCard
           color="bg-paper-50"
           className="lg:col-span-7"
@@ -114,30 +121,30 @@ export function Health() {
         >
           <div className="mb-5 flex items-start justify-between">
             <SectionHeading
-              title="Footsteps"
-              subtitle="keep moving, literally"
-              color="bg-scrap-yellow"
+              title="Today's Steps"
+              subtitle="keep moving, academic weapon"
+              color="bg-scrap-sage"
               className="mb-0"
             />
 
-            <Badge color="bg-scrap-sage">
-              {Math.round(stepPercentage)}%
-            </Badge>
+            <div className="rounded-full border border-ink/20 bg-scrap-yellow px-3 py-1 text-xs font-black">
+              {stepPercentage}%
+            </div>
           </div>
 
           <div className="flex flex-col items-center gap-6 md:flex-row">
 
             {/* Step circle */}
-            <div className="relative flex h-48 w-48 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper-50 shadow-paper">
+            <div className="relative flex h-48 w-48 shrink-0 items-center justify-center">
 
               <svg
                 viewBox="0 0 120 120"
-                className="absolute h-full w-full -rotate-90"
+                className="-rotate-90"
               >
                 <circle
                   cx="60"
                   cy="60"
-                  r="48"
+                  r="50"
                   fill="none"
                   stroke="#2a2520"
                   strokeWidth="8"
@@ -147,62 +154,60 @@ export function Health() {
                 <circle
                   cx="60"
                   cy="60"
-                  r="48"
+                  r="50"
                   fill="none"
                   stroke="#9ab89a"
                   strokeWidth="8"
                   strokeLinecap="round"
-                  strokeDasharray={`${(stepPercentage / 100) * 302} 302`}
+                  strokeDasharray={`${(stepPercentage / 100) * 314} 314`}
+                  className="transition-all duration-700"
                 />
               </svg>
 
-              <div className="relative text-center">
-                <Footprints className="mx-auto mb-1 h-7 w-7" />
+              <div className="absolute text-center">
+                <Footprints className="mx-auto mb-1 h-6 w-6" />
 
                 <p className="cutout-heading text-3xl">
                   {steps.toLocaleString()}
                 </p>
 
                 <p className="font-hand text-sm text-ink/55">
-                  of {stepGoal.toLocaleString()}
+                  of {DAILY_STEP_GOAL.toLocaleString()}
                 </p>
               </div>
             </div>
 
+            {/* Step controls */}
             <div className="flex-1">
-              <p className="font-hand text-xl text-ink/60">
-                today's mission
+              <p className="font-hand text-lg text-ink/60">
+                {remainingSteps > 0
+                  ? `${remainingSteps.toLocaleString()} steps to go.`
+                  : 'Goal smashed! 🎉'}
               </p>
 
-              <h2 className="cutout-heading mt-1 text-2xl">
-                Hit 10k steps
-              </h2>
+              <div className="mt-4 h-4 overflow-hidden rounded-full border border-ink/15 bg-paper-100">
+                <div
+                  className="h-full rounded-full bg-scrap-sage transition-all duration-500"
+                  style={{ width: `${stepPercentage}%` }}
+                />
+              </div>
 
-              <ProgressBar
-                value={stepPercentage}
-                color="bg-scrap-sage"
-                showLabel={false}
-                className="mt-5"
-              />
-
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  onClick={addSteps}
-                  className="paper-colored btn-press flex items-center gap-2 rounded-rough border border-ink/20 bg-scrap-yellow px-4 py-2 font-bold shadow-sticker-sm"
-                >
-                  <Plus className="h-4 w-4" />
-                  +500 steps
-                </button>
-
-                <span className="font-hand text-base text-ink/50">
-                  nice. keep going.
-                </span>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {[500, 1000, 2000].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => addSteps(amount)}
+                    className="paper-colored btn-press rounded-full border border-ink/20 bg-paper-50 px-3 py-1.5 text-xs font-bold shadow-sticker-sm"
+                  >
+                    +{amount}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </StickerCard>
 
-        {/* Today's stats */}
+        {/* Health snapshot */}
         <StickerCard
           color="bg-scrap-pink"
           className="lg:col-span-5"
@@ -211,113 +216,58 @@ export function Health() {
         >
           <div className="mb-4 flex items-center gap-2">
             <HeartPulse className="h-5 w-5" />
-            <h2 className="cutout-heading text-lg">
-              Today, rn
+            <h2 className="cutout-heading text-xl">
+              Health Snapshot
             </h2>
           </div>
 
-          <div className="space-y-3">
-            {healthStats.map((stat) => {
-              const Icon = stat.icon;
+          <div className="grid grid-cols-2 gap-3">
 
-              return (
-                <div
-                  key={stat.label}
-                  className="paper-colored flex items-center justify-between rounded-rough border border-ink/15 bg-paper-50 p-3 shadow-sticker-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-rough border border-ink/20 ${stat.color}`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
+            <div className="paper-colored rounded-rough border border-ink/15 bg-paper-50 p-4 shadow-sticker-sm">
+              <Moon className="mb-2 h-5 w-5" />
+              <p className="text-xs font-black uppercase text-ink/45">
+                Sleep
+              </p>
+              <p className="cutout-heading mt-1 text-2xl">
+                7h 20m
+              </p>
+            </div>
 
-                    <div>
-                      <p className="text-sm font-bold">
-                        {stat.label}
-                      </p>
+            <div className="paper-colored rounded-rough border border-ink/15 bg-paper-50 p-4 shadow-sticker-sm">
+              <Flame className="mb-2 h-5 w-5" />
+              <p className="text-xs font-black uppercase text-ink/45">
+                Active
+              </p>
+              <p className="cutout-heading mt-1 text-2xl">
+                42 min
+              </p>
+            </div>
 
-                      <p className="font-hand text-sm text-ink/50">
-                        today's total
-                      </p>
-                    </div>
-                  </div>
+            <div className="paper-colored rounded-rough border border-ink/15 bg-paper-50 p-4 shadow-sticker-sm">
+              <HeartPulse className="mb-2 h-5 w-5" />
+              <p className="text-xs font-black uppercase text-ink/45">
+                Activity
+              </p>
+              <p className="cutout-heading mt-1 text-2xl">
+                Good
+              </p>
+            </div>
 
-                  <p className="cutout-heading text-xl">
-                    {stat.value}
-                    <span className="ml-1 font-sans text-xs font-bold">
-                      {stat.unit}
-                    </span>
-                  </p>
-                </div>
-              );
-            })}
+            <div className="paper-colored rounded-rough border border-ink/15 bg-paper-50 p-4 shadow-sticker-sm">
+              <Trophy className="mb-2 h-5 w-5" />
+              <p className="text-xs font-black uppercase text-ink/45">
+                Streak
+              </p>
+              <p className="cutout-heading mt-1 text-2xl">
+                6 days
+              </p>
+            </div>
+
           </div>
         </StickerCard>
       </div>
 
-      {/* Weekly activity */}
-      <StickerCard
-        color="bg-paper-50"
-        rotate="right3"
-        tape="corner-tl"
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <SectionHeading
-            title="Weekly Activity"
-            subtitle="proof that you occasionally leave your chair"
-            color="bg-scrap-blue"
-            className="mb-0"
-          />
-
-          <TrendingUp className="h-6 w-6" />
-        </div>
-
-        <div className="flex items-end justify-between gap-2 md:gap-5">
-          {weeklySteps.map((item) => {
-            const height = Math.max(
-              (item.steps / 12000) * 160,
-              20
-            );
-
-            const isToday = item.day === 'Sun';
-
-            return (
-              <div
-                key={item.day}
-                className="flex flex-1 flex-col items-center gap-2"
-              >
-                <span className="font-hand text-xs text-ink/50">
-                  {item.steps >= 10000
-                    ? '10k+'
-                    : `${Math.round(item.steps / 1000)}k`}
-                </span>
-
-                <div
-                  className={cn(
-                    'w-full max-w-12 rounded-t-rough border border-ink/15 transition-all duration-300 hover:-translate-y-1',
-                    isToday
-                      ? 'bg-scrap-sage'
-                      : 'bg-scrap-blue/60'
-                  )}
-                  style={{ height }}
-                />
-
-                <span
-                  className={cn(
-                    'font-bold text-xs',
-                    isToday && 'cutout-heading'
-                  )}
-                >
-                  {item.day}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </StickerCard>
-
-      {/* Water + wellness */}
+      {/* Water + daily goal */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
         {/* Water */}
@@ -326,76 +276,173 @@ export function Health() {
           rotate="left"
           tape="corner-br"
         >
-          <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
-              <h2 className="cutout-heading text-lg">
+              <h2 className="cutout-heading text-xl">
                 Hydration
               </h2>
 
-              <p className="font-hand text-base text-ink/55">
-                drink some water, genius 💧
+              <p className="font-hand text-lg text-ink/55">
+                drink some water, bro.
               </p>
             </div>
 
-            <Droplets className="h-6 w-6" />
+            <Droplets className="h-7 w-7" />
           </div>
 
-          <div className="flex items-center gap-2">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div
-                key={index}
-                className={`h-9 w-7 rounded-b-full rounded-t-full border border-ink/15 ${
-                  index < water
-                    ? 'bg-scrap-sage'
-                    : 'bg-paper-50'
-                }`}
-              />
-            ))}
-          </div>
+          <div className="mt-5 flex items-center gap-4">
 
-          <div className="mt-4 flex items-center justify-between">
-            <p className="cutout-heading text-xl">
-              {water}/8 glasses
-            </p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      'h-10 flex-1 rounded-full border border-ink/15 transition-all',
+                      index < water
+                        ? 'bg-paper-50'
+                        : 'bg-paper-50/30'
+                    )}
+                  />
+                ))}
+              </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={removeWater}
-                className="rounded-full border border-ink/20 bg-paper-50 p-2"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
+              <p className="mt-3 font-hand text-base text-ink/60">
+                {water} / 8 glasses
+              </p>
+            </div>
 
+            <div className="flex flex-col gap-2">
               <button
                 onClick={addWater}
-                className="rounded-full border border-ink/20 bg-scrap-yellow p-2"
+                className="rounded-full border border-ink/20 bg-paper-50 p-2 shadow-sticker-sm transition-transform hover:scale-110"
+                aria-label="add water"
               >
                 <Plus className="h-4 w-4" />
               </button>
+
+              <button
+                onClick={removeWater}
+                className="rounded-full border border-ink/20 bg-paper-50 p-2 shadow-sticker-sm transition-transform hover:scale-110"
+                aria-label="remove water"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
             </div>
+
           </div>
         </StickerCard>
 
-        {/* Wellness note */}
+        {/* Goal */}
         <StickerCard
           color="bg-scrap-yellow"
           rotate="right"
           tape="top"
         >
-          <Coffee className="mb-3 h-7 w-7" />
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="cutout-heading text-xl">
+                Daily Goal
+              </h2>
 
-          <h2 className="cutout-heading text-xl">
-            tiny reminder
-          </h2>
+              <p className="font-hand text-lg text-ink/55">
+                small wins count.
+              </p>
+            </div>
 
-          <p className="mt-2 font-hand text-xl leading-relaxed text-ink/65">
-            Drink water. Touch grass. Stretch your back.
-            Get some sleep. Your assignments aren't going anywhere.
-          </p>
+            <TrendingUp className="h-7 w-7" />
+          </div>
 
-          <Squiggle className="mt-4 h-5 w-40 text-ink/30" />
+          <div className="mt-5">
+            <div className="flex items-end justify-between">
+              <p className="cutout-heading text-4xl">
+                {stepPercentage}%
+              </p>
+
+              <Badge color="bg-paper-50">
+                {stepPercentage >= 100 ? 'Complete!' : 'In progress'}
+              </Badge>
+            </div>
+
+            <div className="mt-3 h-5 overflow-hidden rounded-full border border-ink/20 bg-paper-50">
+              <div
+                className="h-full rounded-full bg-scrap-sage transition-all duration-500"
+                style={{ width: `${stepPercentage}%` }}
+              />
+            </div>
+
+            <p className="mt-3 font-hand text-base text-ink/55">
+              {stepPercentage >= 100
+                ? 'You actually did it. Respect. 🫡'
+                : 'A little more movement and you are there.'}
+            </p>
+          </div>
         </StickerCard>
       </div>
+
+      {/* Activity */}
+      <StickerCard
+        color="bg-paper-50"
+        rotate="right3"
+        tape="corner-tl"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="cutout-heading text-xl">
+              Today's Activity
+            </h2>
+
+            <p className="font-hand text-lg text-ink/55">
+              where those steps came from.
+            </p>
+          </div>
+
+          <Star className="h-7 w-7" />
+        </div>
+
+        <div className="space-y-3">
+          {activities.map((activity) => {
+            const Icon = activity.icon;
+
+            return (
+              <div
+                key={activity.id}
+                className="paper-colored group flex items-center gap-3 rounded-rough border border-ink/15 bg-paper-50 p-3 shadow-sticker-sm transition-all hover:-translate-y-0.5 hover:shadow-paper"
+              >
+                <div
+                  className={cn(
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-rough border border-ink/15',
+                    activity.color
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+
+                <div className="flex-1">
+                  <p className="cutout-heading text-sm">
+                    {activity.title}
+                  </p>
+
+                  <p className="font-hand text-sm text-ink/50">
+                    {activity.time}
+                  </p>
+                </div>
+
+                <span className="text-sm font-black">
+                  {activity.steps}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <Squiggle className="mt-5 h-5 w-40 text-ink/25" />
+
+        <p className="mt-2 font-hand text-lg text-ink/55">
+          keep going. tomorrow-you will thank you.
+        </p>
+      </StickerCard>
+
     </DoodleField>
   );
 }

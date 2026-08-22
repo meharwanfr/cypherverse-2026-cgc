@@ -6,6 +6,8 @@ import { Attendance } from '@/pages/Attendance';
 import { Opportunities } from '@/pages/Opportunities';
 import { Profile } from '@/pages/Profile';
 import { Health } from '@/pages/Health';
+import { CampusWallet } from '@/pages/CampusWallet';
+
 
 import {
   subjects as initialSubjects,
@@ -56,6 +58,10 @@ function App() {
           {page === 'health' && (
             <Health />
           )}
+          {page === 'wallet' && (
+            <CampusWallet />
+          )}
+
 
           {page === 'profile' && (
             <Profile />
