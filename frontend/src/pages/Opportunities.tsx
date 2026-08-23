@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Search, ArrowRight, Calendar, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, ArrowRight, Calendar, Users, X } from 'lucide-react';
 import { StickerCard, Badge, SectionHeading, StickerButton } from '@/components/Sticker';
 import { DoodleField } from '@/components/DoodleField';
 import { Squiggle, Lightning, ZigZag, SunRays, Planet, Pin, PaperClip } from '@/components/Doodles';
-import { opportunities, type Opportunity } from '@/data/mock';
+import { api, type Opportunity } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
 const categories = ['All', 'Scholarship', 'Hackathon', 'Internship', 'Competition', 'Event'] as const;
 type Category = (typeof categories)[number];
@@ -29,6 +30,28 @@ export function Opportunities() {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState<Category>('All');
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [opps, savedIds] = await Promise.all([
+          api.opportunities.list(),
+          api.opportunities.saved.list(),
+        ]);
+        setOpportunities(opps);
+        setSaved(new Set(savedIds));
+      } catch (err) {
+        console.error('[Opportunities] Failed to load:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const filtered = opportunities.filter((o) => {
     const matchQuery =
@@ -45,6 +68,20 @@ export function Opportunities() {
       else next.add(id);
       return next;
     });
+    api.opportunities.saved.toggle(id)
+      .then((res) => toast(res.saved ? 'Saved!' : 'Unsaved'))
+      .catch((err) => {
+        console.error('[Opportunities] Failed to toggle save:', err);
+        toast('Failed to save', 'error');
+      });
+  }
+
+  if (loading) {
+    return (
+      <DoodleField density="busy" className="space-y-7">
+        <p className="font-hand text-xl text-ink/50 text-center py-20">loading opportunities...</p>
+      </DoodleField>
+    );
   }
 
   return (
@@ -158,7 +195,10 @@ export function Opportunities() {
                 </div>
 
                 <div className="mt-4 flex gap-2">
-                  <button className="paper-colored btn-press group/btn flex flex-1 items-center justify-center gap-1.5 rounded-rough border border-ink/20 bg-scrap-yellow py-2.5 font-bold shadow-sticker-sm transition-all">
+                  <button
+                    onClick={() => setSelectedOpp(o)}
+                    className="paper-colored btn-press group/btn flex flex-1 items-center justify-center gap-1.5 rounded-rough border border-ink/20 bg-scrap-yellow py-2.5 font-bold shadow-sticker-sm transition-all"
+                  >
                     view details
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
                   </button>
@@ -175,6 +215,24 @@ export function Opportunities() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedOpp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setSelectedOpp(null)}>
+          <div className="paper-colored relative max-w-lg rounded-rough border border-ink/25 bg-paper-50 p-6 shadow-paper-lg" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setSelectedOpp(null)} className="absolute right-3 top-3 rounded-full p-1 transition-transform hover:rotate-90" aria-label="close">
+              <X className="h-5 w-5" />
+            </button>
+            <Badge color={selectedOpp.color} className="mb-3">{selectedOpp.category}</Badge>
+            <h2 className="cutout-heading text-2xl mb-2">{selectedOpp.name}</h2>
+            <p className="font-hand text-lg text-ink/60 mb-4">{selectedOpp.tag}</p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-ink/50" /><span>Deadline: {selectedOpp.deadline} ({selectedOpp.daysLeft}d left)</span></div>
+              <div><p className="font-bold text-ink/70 mb-1">Eligibility</p><p className="font-hand text-base text-ink/60">{selectedOpp.eligibility}</p></div>
+              <div><p className="font-bold text-ink/70 mb-1">Description</p><p className="font-hand text-base text-ink/60">{selectedOpp.description}</p></div>
+            </div>
+          </div>
         </div>
       )}
     </DoodleField>

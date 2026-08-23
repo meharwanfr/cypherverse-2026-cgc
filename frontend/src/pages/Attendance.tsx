@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Plus, Minus, Pencil, X, Check } from 'lucide-react';
+import { Plus, Minus, Pencil, X, Check, Trash2 } from 'lucide-react';
 import { StickerCard, Badge, ProgressBar, SectionHeading, StickerButton } from '@/components/Sticker';
 import { DoodleField } from '@/components/DoodleField';
 import { Squiggle, RunningDoodle, Smiley, WorriedFace, Lightning, ZigZag } from '@/components/Doodles';
 import type { Dispatch, SetStateAction } from 'react';
-import type { Subject } from '@/data/mock';
+import { api, type Subject } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
 function attendanceState(pct: number) {
   if (pct >= 85) return { label: 'doing great', face: Smiley, color: 'bg-scrap-sage', msg: 'your attendance is doing surprisingly well' };
@@ -20,9 +21,12 @@ type AttendanceProps = {
 };
 
 export function Attendance({ subjects, setSubjects }: AttendanceProps) {
+  const { toast } = useToast();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ attended: 0, total: 0 });
   const [justBumped, setJustBumped] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSubject, setNewSubject] = useState({ name: '', code: '', instructor: '' });
 
   const overall = (subjects.reduce((s, x) => s + x.attended, 0) / subjects.reduce((s, x) => s + x.total, 0)) * 100;
   const state = attendanceState(overall);
@@ -34,10 +38,17 @@ export function Attendance({ subjects, setSubjects }: AttendanceProps) {
     setDraft({ attended: s.attended, total: s.total });
   }
   function saveEdit(id: string) {
+    const attended = Math.min(draft.attended, draft.total);
     setSubjects((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, attended: Math.min(draft.attended, draft.total), total: draft.total } : s))
+      prev.map((s) => (s.id === id ? { ...s, attended, total: draft.total } : s))
     );
     setEditing(null);
+    api.subjects.updateAttendance(id, attended, draft.total).then(() => {
+      toast('Attendance updated!');
+    }).catch((err) => {
+      console.error('[Attendance] Failed to save edit:', err);
+      toast('Failed to save', 'error');
+    });
   }
   function bump(id: string, delta: number) {
     setSubjects((prev) =>
@@ -50,6 +61,12 @@ export function Attendance({ subjects, setSubjects }: AttendanceProps) {
     );
     setJustBumped(id);
     setTimeout(() => setJustBumped(null), 500);
+    api.subjects.bump(id, delta).then(() => {
+      toast(delta > 0 ? 'Marked present!' : 'Marked bunked');
+    }).catch((err) => {
+      console.error('[Attendance] Failed to bump:', err);
+      toast('Failed to update', 'error');
+    });
   }
 
   return (
@@ -103,6 +120,47 @@ export function Attendance({ subjects, setSubjects }: AttendanceProps) {
                   </Badge>
                 ))}
               </div>
+            </div>
+          </div>
+        </StickerCard>
+      )}
+
+      {/* Add Subject Form */}
+      {showAddForm && (
+        <StickerCard color="bg-scrap-sage" tape="top">
+          <div className="space-y-4">
+            <div>
+              <p className="cutout-heading text-xl">New Subject</p>
+              <p className="font-hand text-sm text-ink/55">one more to survive</p>
+            </div>
+            <input
+              placeholder="Name"
+              value={newSubject.name}
+              onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
+              className="w-full rounded-rough border border-ink/25 bg-paper-50 px-4 py-3 outline-none focus:shadow-paper-sm"
+            />
+            <input
+              placeholder="Code"
+              value={newSubject.code}
+              onChange={(e) => setNewSubject({ ...newSubject, code: e.target.value })}
+              className="w-full rounded-rough border border-ink/25 bg-paper-50 px-4 py-3 outline-none focus:shadow-paper-sm"
+            />
+            <input
+              placeholder="Instructor"
+              value={newSubject.instructor}
+              onChange={(e) => setNewSubject({ ...newSubject, instructor: e.target.value })}
+              className="w-full rounded-rough border border-ink/25 bg-paper-50 px-4 py-3 outline-none focus:shadow-paper-sm"
+            />
+            <div className="flex gap-2">
+              <StickerButton onClick={() => { setNewSubject({ name: '', code: '', instructor: '' }); setShowAddForm(false); }}>cancel</StickerButton>
+              <StickerButton color="bg-scrap-sage" onClick={() => {
+                api.subjects.create(newSubject).then((subject) => {
+                  setSubjects((prev) => [...prev, subject]);
+                  setNewSubject({ name: '', code: '', instructor: '' });
+                  setShowAddForm(false);
+                  toast('Subject added!');
+                }).catch(() => toast('Failed to add subject', 'error'));
+              }}>add it</StickerButton>
             </div>
           </div>
         </StickerCard>
@@ -195,6 +253,17 @@ export function Attendance({ subjects, setSubjects }: AttendanceProps) {
                       <button onClick={() => startEdit(s)} className="paper-colored btn-press rounded-rough border border-ink/20 bg-paper-50 p-2 shadow-sticker-sm" aria-label="edit">
                         <Pencil className="h-4 w-4" />
                       </button>
+                      <button
+                        onClick={() => {
+                          api.subjects.delete(s.id).then(() => {
+                            setSubjects((prev) => prev.filter((sub) => sub.id !== s.id));
+                            toast('Subject removed');
+                          }).catch(() => toast('Failed to delete subject', 'error'));
+                        }}
+                        className="ml-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-scrap-coral/30"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </>
                 )}
@@ -212,7 +281,7 @@ export function Attendance({ subjects, setSubjects }: AttendanceProps) {
             <p className="cutout-heading text-xl">add a new subject</p>
             <p className="font-hand text-lg text-ink/55">because apparently you signed up for more pain</p>
           </div>
-          <StickerButton color="bg-scrap-sage" rotate="rotate-tilt-r">
+          <StickerButton color="bg-scrap-sage" rotate="rotate-tilt-r" onClick={() => setShowAddForm(true)}>
             <Plus className="h-5 w-5" /> add subject
           </StickerButton>
         </div>

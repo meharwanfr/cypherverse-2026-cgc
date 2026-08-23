@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IdCard,
   Download,
@@ -20,37 +20,53 @@ import {
 import { StickerCard, Badge, SectionHeading } from '@/components/Sticker';
 import { DoodleField } from '@/components/DoodleField';
 import { Star, PaperClip, Squiggle, ZigZag } from '@/components/Doodles';
-import { student } from '@/data/mock';
+import { api, type StudentProfile, type WalletTransaction } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
-const transactions = [
-  {
-    id: 1,
-    title: 'Campus Cafeteria',
-    date: 'Today · 1:20 PM',
-    amount: '- ₹120',
-    type: 'out',
-  },
-  {
-    id: 2,
-    title: 'Wallet Top-up',
-    date: 'Yesterday · 6:42 PM',
-    amount: '+ ₹1,000',
-    type: 'in',
-  },
-  {
-    id: 3,
-    title: 'Printing Centre',
-    date: 'Aug 21 · 11:10 AM',
-    amount: '- ₹45',
-    type: 'out',
-  },
-];
-
-export function Profile() {
+export function Profile({ setPage }: { setPage?: (page: string) => void }) {
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<'resume' | 'portfolio'>(
     'resume'
   );
+  const [student, setStudent] = useState<StudentProfile>({
+    id: '',
+    name: '',
+    course: '',
+    branch: '',
+    year: '',
+    semester: 0,
+    rollNo: '',
+    email: '',
+    phone: '',
+    cgpa: 0,
+    initials: '',
+    avatarColor: '',
+    bio: '',
+    skills: [],
+    interests: [],
+  });
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [stu, txns, wallet] = await Promise.all([
+          api.student.profile(),
+          api.wallet.transactions(),
+          api.wallet.get(),
+        ]);
+        setStudent(stu);
+        setTransactions(txns);
+        setWalletBalance(wallet.balance);
+      } catch (err) {
+        console.error('[Profile] Failed to load:', err);
+        toast('Failed to load profile', 'error');
+      }
+    }
+    load();
+  }, []);
 
   return (
     <DoodleField density="normal" className="space-y-7">
@@ -191,7 +207,7 @@ export function Profile() {
               </span>
 
               <span className="font-hand text-lg">
-                CSE
+                {student.branch}
               </span>
             </div>
           </div>
@@ -285,7 +301,20 @@ export function Profile() {
                 </div>
               </div>
 
-              <button className="paper-colored btn-press mt-5 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-scrap-yellow py-2.5 text-sm font-bold shadow-sticker-sm">
+              <button
+                onClick={() => {
+                  const resume = `RESUME\n\nName: ${student.name}\nCourse: ${student.course}\nBranch: ${student.branch}\nSemester: ${student.semester}\nCGPA: ${student.cgpa}\nRoll No: ${student.rollNo}\nEmail: ${student.email}\nPhone: ${student.phone}\n\nBio:\n${student.bio}\n\nSkills:\n${student.skills.map(s => `${s.name} - ${s.level}/5`).join('\n')}\n\nInterests:\n${student.interests.join(', ')}`;
+                  const blob = new Blob([resume], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${student.name.replace(/\s+/g, '_')}_Resume.txt`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast('Resume downloaded!');
+                }}
+                className="paper-colored btn-press mt-5 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-scrap-yellow py-2.5 text-sm font-bold shadow-sticker-sm"
+              >
                 <Download className="h-4 w-4" />
                 Download Resume
               </button>
@@ -349,7 +378,10 @@ export function Profile() {
                 </div>
               </div>
 
-              <button className="paper-colored btn-press mt-5 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-scrap-blue py-2.5 text-sm font-bold shadow-sticker-sm">
+              <button
+                onClick={() => toast('Portfolio feature coming soon!', 'info')}
+                className="paper-colored btn-press mt-5 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-scrap-blue py-2.5 text-sm font-bold shadow-sticker-sm"
+              >
                 <ExternalLink className="h-4 w-4" />
                 Open Portfolio
               </button>
@@ -386,7 +418,7 @@ export function Profile() {
 
             <div className="mt-1 flex items-end justify-between">
               <p className="cutout-heading text-4xl">
-                ₹2,450
+                ₹{walletBalance.toLocaleString('en-IN')}
               </p>
 
               <CreditCard className="h-8 w-8 opacity-45" />
@@ -426,13 +458,16 @@ export function Profile() {
                 </div>
 
                 <span className="text-sm font-black">
-                  {transaction.amount}
+                  {transaction.type === 'in' ? '+' : '-'} ₹{Math.abs(transaction.amount).toLocaleString('en-IN')}
                 </span>
               </div>
             ))}
           </div>
 
-          <button className="paper-colored btn-press mt-4 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-paper-50 py-2.5 text-sm font-bold shadow-sticker-sm">
+          <button
+            onClick={() => setPage?.('wallet')}
+            className="paper-colored btn-press mt-4 flex w-full items-center justify-center gap-2 rounded-rough border border-ink/20 bg-paper-50 py-2.5 text-sm font-bold shadow-sticker-sm"
+          >
             View all transactions
             <ArrowUpRight className="h-4 w-4" />
           </button>
@@ -501,7 +536,9 @@ export function Profile() {
 
           <div className="mt-6 flex items-center gap-3">
             <a
-              href="#"
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="paper-colored btn-press flex items-center gap-2 rounded-full border border-ink/20 bg-paper-50 px-4 py-2 text-sm font-bold shadow-sticker-sm"
             >
               <Github className="h-4 w-4" />
@@ -509,7 +546,9 @@ export function Profile() {
             </a>
 
             <a
-              href="#"
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="paper-colored btn-press flex items-center gap-2 rounded-full border border-ink/20 bg-paper-50 px-4 py-2 text-sm font-bold shadow-sticker-sm"
             >
               <Linkedin className="h-4 w-4" />

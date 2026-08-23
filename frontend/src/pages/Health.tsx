@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Footprints,
   HeartPulse,
@@ -22,40 +22,59 @@ import {
   Squiggle,
   SunRays,
 } from '@/components/Doodles';
+import { api, type HealthActivity } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
 const DAILY_STEP_GOAL = 10000;
 
-const activities = [
-  {
-    id: 1,
-    title: 'Morning walk',
-    steps: '2,340 steps',
-    time: '8:10 AM',
-    icon: Footprints,
-    color: 'bg-scrap-sage',
-  },
-  {
-    id: 2,
-    title: 'College commute',
-    steps: '3,120 steps',
-    time: '11:25 AM',
-    icon: Footprints,
-    color: 'bg-scrap-blue',
-  },
-  {
-    id: 3,
-    title: 'Evening walk',
-    steps: '2,382 steps',
-    time: '7:15 PM',
-    icon: Footprints,
-    color: 'bg-scrap-yellow',
-  },
-];
-
 export function Health() {
+  const { toast } = useToast();
   const [steps, setSteps] = useState(7842);
   const [water, setWater] = useState(5);
+  const [activities, setActivities] = useState<HealthActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [healthSnapshot, setHealthSnapshot] = useState({
+    sleepHours: '7h 20m',
+    activeMinutes: '42 min',
+    activityLevel: 'Good',
+    streak: '6 days',
+  });
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [health, acts] = await Promise.all([
+          api.health.get(),
+          api.health.activities(),
+        ]);
+        setSteps(health.steps);
+        setWater(health.water);
+        setActivities(acts);
+        const sleepH = Math.floor(health.sleepHours || 7);
+        const sleepM = Math.round(((health.sleepHours || 7) - sleepH) * 60);
+        setHealthSnapshot({
+          sleepHours: `${sleepH}h ${sleepM}m`,
+          activeMinutes: `${health.activeMinutes || 42} min`,
+          activityLevel: 'Good',
+          streak: `${health.streak || 6} days`,
+        });
+      } catch (err) {
+        console.error('[Health] Failed to load:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <DoodleField density="normal">
+        <p className="font-hand text-xl text-ink/50 text-center py-20">loading health data...</p>
+      </DoodleField>
+    );
+  }
 
   const stepPercentage = Math.min(
     Math.round((steps / DAILY_STEP_GOAL) * 100),
@@ -68,17 +87,37 @@ export function Health() {
   );
 
   function addSteps(amount: number) {
-    setSteps((previous) =>
-      Math.min(previous + amount, 20000)
-    );
+    setSteps((previous) => {
+      const next = Math.min(previous + amount, 20000);
+      api.health.update({ steps: next }).catch((err) => {
+        console.error('[Health] Failed to update steps:', err);
+      });
+      if (next >= DAILY_STEP_GOAL && previous < DAILY_STEP_GOAL) {
+        toast('Steps updated!');
+      }
+      return next;
+    });
   }
 
   function addWater() {
-    setWater((previous) => Math.min(previous + 1, 8));
+    setWater((previous) => {
+      const next = Math.min(previous + 1, 8);
+      api.health.update({ water: next }).catch((err) => {
+        console.error('[Health] Failed to update water:', err);
+      });
+      toast('Water logged!');
+      return next;
+    });
   }
 
   function removeWater() {
-    setWater((previous) => Math.max(previous - 1, 0));
+    setWater((previous) => {
+      const next = Math.max(previous - 1, 0);
+      api.health.update({ water: next }).catch((err) => {
+        console.error('[Health] Failed to update water:', err);
+      });
+      return next;
+    });
   }
 
   return (
@@ -193,6 +232,18 @@ export function Health() {
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setSteps((prev) => {
+                      const next = Math.max(prev - 500, 0);
+                      api.health.update({ steps: next }).catch(() => toast('Failed to update steps', 'error'));
+                      return next;
+                    });
+                  }}
+                  className="paper-colored btn-press rounded-full border border-ink/20 bg-scrap-coral/30 px-3 py-1.5 text-xs font-bold shadow-sticker-sm"
+                >
+                  -500
+                </button>
                 {[500, 1000, 2000].map((amount) => (
                   <button
                     key={amount}
@@ -229,7 +280,7 @@ export function Health() {
                 Sleep
               </p>
               <p className="cutout-heading mt-1 text-2xl">
-                7h 20m
+                {healthSnapshot.sleepHours}
               </p>
             </div>
 
@@ -239,7 +290,7 @@ export function Health() {
                 Active
               </p>
               <p className="cutout-heading mt-1 text-2xl">
-                42 min
+                {healthSnapshot.activeMinutes}
               </p>
             </div>
 
@@ -249,7 +300,7 @@ export function Health() {
                 Activity
               </p>
               <p className="cutout-heading mt-1 text-2xl">
-                Good
+                {healthSnapshot.activityLevel}
               </p>
             </div>
 
@@ -259,7 +310,7 @@ export function Health() {
                 Streak
               </p>
               <p className="cutout-heading mt-1 text-2xl">
-                6 days
+                {healthSnapshot.streak}
               </p>
             </div>
 
@@ -300,8 +351,8 @@ export function Health() {
                     className={cn(
                       'h-10 flex-1 rounded-full border border-ink/15 transition-all',
                       index < water
-                        ? 'bg-paper-50'
-                        : 'bg-paper-50/30'
+                        ? 'bg-scrap-blue'
+                        : 'bg-paper-300/50'
                     )}
                   />
                 ))}
@@ -402,7 +453,7 @@ export function Health() {
 
         <div className="space-y-3">
           {activities.map((activity) => {
-            const Icon = activity.icon;
+            const Icon = Footprints;
 
             return (
               <div
@@ -429,7 +480,7 @@ export function Health() {
                 </div>
 
                 <span className="text-sm font-black">
-                  {activity.steps}
+                  {activity.stepsText}
                 </span>
               </div>
             );

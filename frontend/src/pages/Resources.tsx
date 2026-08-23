@@ -21,13 +21,13 @@ import {
   PaperClip,
 } from '@/components/Doodles';
 import {
-  resources as initialResources,
-  resourceTypes,
+  api,
   type Resource,
-} from '@/data/mock';
+} from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
-const STORAGE_KEY = 'campushub-resources';
+const resourceTypes = ['Notes', 'Book', 'E-book', 'PYQ', 'Subject Resource'] as const;
 
 const typeMeta: Record<
   Resource['type'],
@@ -71,9 +71,11 @@ const typeMeta: Record<
 };
 
 export function Resources() {
+  const { toast } = useToast();
   const [resourceList, setResourceList] =
-    useState<Resource[]>(initialResources);
+    useState<Resource[]>([]);
 
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [activeType, setActiveType] =
     useState<Resource['type'] | 'All'>('All');
@@ -89,35 +91,34 @@ export function Resources() {
     author: '',
     type: 'Notes' as Resource['type'],
     pages: '',
+    url: '',
   });
 
-  /*
-   * Load saved resources
-   */
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) {
-      return;
+    async function load() {
+      try {
+        const [res, bookmarks] = await Promise.all([
+          api.resources.list(),
+          api.resources.bookmarks.list(),
+        ]);
+        setResourceList(res);
+        setBookmarked(new Set(bookmarks));
+      } catch (err) {
+        console.error('[Resources] Failed to load:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-
-    try {
-      const parsed: Resource[] = JSON.parse(saved);
-      setResourceList(parsed);
-    } catch {
-      console.warn('Could not load saved resources.');
-    }
+    load();
   }, []);
 
-  /*
-   * Save resources whenever they change
-   */
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(resourceList)
+  if (loading) {
+    return (
+      <DoodleField density="normal" className="space-y-7">
+        <p className="font-hand text-xl text-ink/50 text-center py-20">loading resources...</p>
+      </DoodleField>
     );
-  }, [resourceList]);
+  }
 
   const filtered = resourceList.filter((resource) => {
     const search = query.toLowerCase();
@@ -146,6 +147,13 @@ export function Resources() {
 
       return next;
     });
+
+    api.resources.bookmarks.toggle(id).then((res) => {
+      toast(res.bookmarked ? 'Bookmarked!' : 'Bookmark removed');
+    }).catch((err) => {
+      console.error('[Resources] Failed to toggle bookmark:', err);
+      toast('Failed to update bookmark', 'error');
+    });
   }
 
   function deleteResource(id: string) {
@@ -165,6 +173,13 @@ export function Resources() {
       const next = new Set(previous);
       next.delete(id);
       return next;
+    });
+
+    api.resources.delete(id).then(() => {
+      toast('Resource removed');
+    }).catch((err) => {
+      console.error('[Resources] Failed to delete:', err);
+      toast('Failed to delete resource', 'error');
     });
   }
 
@@ -195,21 +210,43 @@ export function Resources() {
       ...previous,
     ]);
 
+    api.resources.create({
+      title,
+      type: newResource.type,
+      subject,
+      author,
+      pages: Number(newResource.pages) || 1,
+      color: typeMeta[newResource.type].color,
+      emoji: typeMeta[newResource.type].emoji,
+      url: newResource.url || undefined,
+    }).then((created) => {
+      setResourceList((previous) =>
+        previous.map((r) => (r.id === resource.id ? { ...r, id: created.id } : r))
+      );
+      toast('Resource added!');
+    }).catch((err) => {
+      console.error('[Resources] Failed to create:', err);
+      toast('Failed to add resource', 'error');
+    });
+
     setNewResource({
       title: '',
       subject: '',
       author: '',
       type: 'Notes',
       pages: '',
+      url: '',
     });
 
     setShowAddForm(false);
   }
 
   function openResource(resource: Resource) {
-    alert(
-      `No link is attached to "${resource.title}" yet.`
-    );
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+    } else {
+      toast('No link attached to this resource', 'info');
+    }
   }
 
   return (
@@ -387,6 +424,18 @@ export function Resources() {
                 }))
               }
               placeholder="Number of pages"
+              className="rounded-rough border border-ink/25 bg-paper-50 px-4 py-3 outline-none focus:shadow-paper-sm"
+            />
+
+            <input
+              value={newResource.url}
+              onChange={(event) =>
+                setNewResource((previous) => ({
+                  ...previous,
+                  url: event.target.value,
+                }))
+              }
+              placeholder="Resource link (optional)"
               className="rounded-rough border border-ink/25 bg-paper-50 px-4 py-3 outline-none focus:shadow-paper-sm"
             />
           </div>

@@ -21,3 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+backend/.env
+backend/dist
+backend/drizzle/

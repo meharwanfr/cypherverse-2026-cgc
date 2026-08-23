@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   BookOpen,
@@ -6,12 +6,13 @@ import {
   Rocket,
   IdCard,
   WalletCards,
+  BotMessageSquare,
   Menu,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Star, Squiggle, Sparkle, PaperClip } from '@/components/Doodles';
-import { student } from '@/data/mock';
+import { api, type StudentProfile } from '@/lib/api';
 
 export type Page =
   | 'dashboard'
@@ -20,7 +21,8 @@ export type Page =
   | 'opportunities'
   | 'profile'
   | 'wallet'
-  | 'health';
+  | 'health'
+  | 'chatbot';
 
 type NavItem = {
   id: Page;
@@ -37,6 +39,7 @@ const navItems: NavItem[] = [
   { id: 'opportunities', label: 'Opportunities', icon: Rocket, color: 'bg-scrap-coral', rotate: 'rotate-tilt-r' },
   { id: 'wallet', label: 'Campus Wallet', icon: WalletCards, color: 'bg-scrap-yellow', rotate: 'rotate-tilt-r' },
   { id: 'profile', label: 'My Card', icon: IdCard, color: 'bg-scrap-pink', rotate: 'rotate-tilt-l' },
+  { id: 'chatbot', label: 'AI Buddy', icon: BotMessageSquare, color: 'bg-scrap-lavender', rotate: 'rotate-tilt-r' },
 ];
 
 type SidebarProps = {
@@ -46,6 +49,15 @@ type SidebarProps = {
 
 export function Sidebar({ page, setPage }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  const [student, setStudent] = useState<StudentProfile>({
+    id: '', name: '', course: '', branch: '', year: '', semester: 0,
+    rollNo: '', email: '', phone: '', cgpa: 0, initials: '?',
+    avatarColor: 'bg-crayon-orange', bio: '', skills: [], interests: [],
+  });
+
+  useEffect(() => {
+    api.student.profile().then(setStudent).catch(() => {});
+  }, []);
 
   return (
     <>

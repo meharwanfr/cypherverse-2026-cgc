@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar, type Page } from '@/components/Sidebar';
 import { Dashboard } from '@/pages/Dashboard';
 import { Resources } from '@/pages/Resources';
@@ -7,23 +7,20 @@ import { Opportunities } from '@/pages/Opportunities';
 import { Profile } from '@/pages/Profile';
 import { Health } from '@/pages/Health';
 import { CampusWallet } from '@/pages/CampusWallet';
+import { Chatbot } from '@/pages/Chatbot';
 
-
-import {
-  subjects as initialSubjects,
-  deadlines as initialDeadlines,
-  type Subject,
-  type Deadline,
-} from '@/data/mock';
+import { api, type Subject, type Deadline } from '@/lib/api';
 
 function App() {
   const [page, setPage] = useState<Page>('dashboard');
 
-  const [subjects, setSubjects] =
-    useState<Subject[]>(initialSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
 
-  const [deadlines, setDeadlines] =
-    useState<Deadline[]>(initialDeadlines);
+  useEffect(() => {
+    api.subjects.list().then(setSubjects).catch(() => {});
+    api.deadlines.list().then(setDeadlines).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-paper-200">
@@ -62,9 +59,12 @@ function App() {
             <CampusWallet />
           )}
 
-
           {page === 'profile' && (
-            <Profile />
+            <Profile setPage={(p) => setPage(p as Page)} />
+          )}
+
+          {page === 'chatbot' && (
+            <Chatbot />
           )}
 
         </div>

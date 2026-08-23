@@ -76,6 +76,14 @@ export default {
           '0%': { transform: 'translateX(-12px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
+        'slide-up': {
+          '0%': { transform: 'translateY(16px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'page-turn': {
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         wiggle: 'wiggle 0.6s ease-in-out',
@@ -83,6 +91,8 @@ export default {
         pop: 'pop 0.4s ease-out',
         'spin-slow': 'spin-slow 20s linear infinite',
         'slide-in': 'slide-in 0.3s ease-out',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'page-turn': 'page-turn 0.35s ease-out',
       },
     },
   },

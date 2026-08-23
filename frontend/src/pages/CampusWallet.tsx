@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Wallet,
   Car,
@@ -12,37 +13,70 @@ import {
 import { StickerCard, Badge} from '@/components/Sticker';
 import { DoodleField } from '@/components/DoodleField';
 import { Star, Squiggle } from '@/components/Doodles';
-import { student } from '@/data/mock';
+import { api, type StudentProfile, type WalletBalance, type WalletTransaction } from '@/lib/api';
 import { cn } from '@/lib/utils';
-
-const transactions = [
-  {
-    id: 1,
-    title: 'Campus Canteen',
-    date: 'Today · 1:20 PM',
-    amount: -120,
-    icon: ArrowUpRight,
-    color: 'bg-scrap-coral',
-  },
-  {
-    id: 2,
-    title: 'Wallet Top-up',
-    date: 'Today · 10:05 AM',
-    amount: 500,
-    icon: ArrowDownLeft,
-    color: 'bg-scrap-sage',
-  },
-  {
-    id: 3,
-    title: 'Printing Centre',
-    date: 'Yesterday · 4:42 PM',
-    amount: -45,
-    icon: ArrowUpRight,
-    color: 'bg-scrap-blue',
-  },
-];
+import { useToast } from '@/components/Toast';
 
 export function CampusWallet() {
+  const { toast } = useToast();
+  const [student, setStudent] = useState<StudentProfile>({
+    id: '',
+    name: '',
+    course: '',
+    branch: '',
+    year: '',
+    semester: 0,
+    rollNo: '',
+    email: '',
+    phone: '',
+    cgpa: 0,
+    initials: '',
+    avatarColor: '',
+    bio: '',
+    skills: [],
+    interests: [],
+  });
+  const [walletData, setWalletData] = useState<WalletBalance>({
+    id: '',
+    studentId: '',
+    balance: 0,
+    monthlySpending: 0,
+  });
+  const [transactions, setTransactions] = useState<(WalletTransaction & { icon: typeof ArrowUpRight })[]>([]);
+  const [topupAmount, setTopupAmount] = useState('500');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [stu, wallet, txns] = await Promise.all([
+          api.student.profile(),
+          api.wallet.get(),
+          api.wallet.transactions(),
+        ]);
+        setStudent(stu);
+        setWalletData(wallet);
+        setTransactions(txns.map((t) => ({
+          ...t,
+          icon: t.amount > 0 ? ArrowDownLeft : ArrowUpRight,
+        })));
+      } catch (err) {
+        console.error('[CampusWallet] Failed to load:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <DoodleField density="normal">
+        <p className="font-hand text-xl text-ink/50 text-center py-20">loading wallet...</p>
+      </DoodleField>
+    );
+  }
+
   return (
     <DoodleField density="normal" className="space-y-7">
 
@@ -105,10 +139,48 @@ export function CampusWallet() {
 
             <div className="mt-1 flex items-center justify-between">
               <p className="cutout-heading text-4xl">
-                ₹2,480
+                ₹{(walletData?.balance || 0).toLocaleString('en-IN')}
               </p>
+            </div>
 
-              <button className="paper-colored btn-press flex items-center gap-1 rounded-rough border border-ink/20 bg-scrap-yellow px-3 py-2 text-sm font-bold shadow-sticker-sm">
+            <div className="mt-3 flex items-center gap-2">
+              <span className="font-hand text-ink/55">₹</span>
+              <input
+                type="number"
+                value={topupAmount}
+                onChange={(e) => setTopupAmount(e.target.value)}
+                min="1"
+                className="w-24 rounded-rough border border-ink/20 bg-paper-50 px-3 py-1.5 text-sm font-bold outline-none focus:shadow-paper-sm"
+              />
+            </div>
+
+            <div className="mt-3">
+              <button
+                onClick={() => {
+                  const amount = parseInt(topupAmount, 10);
+                  if (!amount || amount <= 0) {
+                    toast('Enter a valid amount', 'error');
+                    return;
+                  }
+                  api.wallet.topup(amount).then((updated) => {
+                    setWalletData(updated);
+                    setTopupAmount('500');
+                    toast(`₹${amount} added to wallet!`);
+                    return api.wallet.transactions();
+                  }).then((txns) => {
+                    if (txns) {
+                      setTransactions(txns.map((t) => ({
+                        ...t,
+                        icon: t.amount > 0 ? ArrowDownLeft : ArrowUpRight,
+                      })));
+                    }
+                  }).catch((err) => {
+                    console.error('[CampusWallet] Failed to top up:', err);
+                    toast('Failed to add money', 'error');
+                  });
+                }}
+                className="paper-colored btn-press flex items-center gap-1 rounded-rough border border-ink/20 bg-scrap-yellow px-3 py-2 text-sm font-bold shadow-sticker-sm"
+              >
                 <Plus className="h-4 w-4" />
                 Add money
               </button>
@@ -120,7 +192,7 @@ export function CampusWallet() {
               </span>
 
               <span className="font-bold">
-                ₹1,620
+                ₹{(walletData?.monthlySpending || 0).toLocaleString('en-IN')}
               </span>
             </div>
           </div>

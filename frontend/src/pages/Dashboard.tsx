@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import {
   CheckCircle,
   Plus,
@@ -31,15 +31,17 @@ import {
   PaperClip,
 } from '@/components/Doodles';
 import {
-  opportunities,
-  collegeEvents,
-  resources,
-  student,
+  api,
   type Subject,
   type Deadline,
-} from '@/data/mock';
+  type Opportunity,
+  type Resource,
+  type StudentProfile,
+  type CollegeEvent,
+} from '@/lib/api';
 import type { Page } from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 
 type DashboardProps = {
   setPage: (page: Page) => void;
@@ -87,16 +89,59 @@ export function Dashboard({
   deadlines,
   setDeadlines,
 }: DashboardProps) {
+  const { toast } = useToast();
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
-  const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [showDeadlineForm, setShowDeadlineForm] =
-    useState(false);
+  const [checked, setChecked] = useState<Set<string>>(() => new Set(deadlines.filter(d => d.checked).map(d => d.id)));
+  const [showDeadlineForm, setShowDeadlineForm] = useState(false);
 
   const [newDeadline, setNewDeadline] = useState({
     title: '',
     subject: '',
     due: '',
   });
+
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [collegeEvents, setCollegeEvents] = useState<CollegeEvent[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [student, setStudent] = useState<StudentProfile>({
+    id: '',
+    name: '',
+    course: '',
+    branch: '',
+    year: '',
+    semester: 0,
+    rollNo: '',
+    email: '',
+    phone: '',
+    cgpa: 0,
+    initials: '',
+    avatarColor: '',
+    bio: '',
+    skills: [],
+    interests: [],
+  });
+
+  useEffect(() => { setChecked(new Set(deadlines.filter(d => d.checked).map(d => d.id))); }, [deadlines]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [opps, events, res, stu] = await Promise.all([
+          api.opportunities.list(),
+          api.events.list(),
+          api.resources.list(),
+          api.student.profile(),
+        ]);
+        setOpportunities(opps);
+        setCollegeEvents(events);
+        setResources(res);
+        setStudent(stu);
+      } catch (err) {
+        console.error('[Dashboard] Failed to load data:', err);
+      }
+    }
+    load();
+  }, []);
 
   const overallAttendance =
     (subjects.reduce((sum, subject) => sum + subject.attended, 0) /
@@ -122,6 +167,7 @@ export function Dashboard({
 
       return next;
     });
+    api.resources.bookmarks.toggle(id).then((res) => { toast(res.bookmarked ? 'Bookmarked!' : 'Bookmark removed'); }).catch(() => toast('Failed to update bookmark', 'error'));
   }
 
   function toggleDeadline(id: string) {
@@ -136,6 +182,14 @@ export function Dashboard({
 
       return next;
     });
+
+    const deadline = deadlines.find((d) => d.id === id);
+    if (deadline) {
+      api.deadlines.check(id, !checked.has(id)).then(() => toast(checked.has(id) ? 'Marked incomplete' : 'Marked complete')).catch((err) => {
+        console.error('[Dashboard] Failed to toggle deadline:', err);
+        toast('Failed to update deadline', 'error');
+      });
+    }
   }
 
   function handleQuickAction(label: string) {
@@ -204,6 +258,22 @@ export function Dashboard({
       deadline,
     ]);
 
+    api.deadlines.create({
+      title: deadline.title,
+      subject: deadline.subject,
+      due: deadline.due,
+      daysLeft: deadline.daysLeft,
+      color: deadline.color,
+    }).then((created) => {
+      setDeadlines((previous) =>
+        previous.map((d) => (d.id === deadline.id ? { ...d, id: created.id } : d))
+      );
+      toast('Deadline added!');
+    }).catch((err) => {
+      console.error('[Dashboard] Failed to create deadline:', err);
+      toast('Failed to add deadline', 'error');
+    });
+
     setNewDeadline({
       title: '',
       subject: '',
@@ -224,6 +294,13 @@ export function Dashboard({
       const next = new Set(previous);
       next.delete(id);
       return next;
+    });
+
+    toast('Deadline removed');
+
+    api.deadlines.delete(id).catch((err) => {
+      console.error('[Dashboard] Failed to delete deadline:', err);
+      toast('Failed to delete deadline', 'error');
     });
   }
 
@@ -253,10 +330,10 @@ export function Dashboard({
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Badge color="bg-paper-50">Sem {student.semester}</Badge>
-                <Badge color="bg-paper-50">CGPA {student.cgpa}</Badge>
+                <Badge color="bg-paper-50">Sem {student?.semester}</Badge>
+                <Badge color="bg-paper-50">CGPA {student?.cgpa}</Badge>
                 <Badge color="bg-paper-50">
-                  {student.branch.split(' ')[0]}
+                  {student?.branch.split(' ')[0]}
                 </Badge>
               </div>
             </div>
@@ -264,7 +341,7 @@ export function Dashboard({
             <div className="flex items-center gap-3">
               <div className="group relative">
                 <div className="paper-colored flex h-24 w-24 items-center justify-center rounded-rough border border-ink/25 bg-paper-50 cutout-heading text-4xl shadow-paper-lg transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
-                  {student.initials}
+                  {student?.initials}
                 </div>
 
                 <Star className="absolute -right-3 -top-3 h-8 w-8 animate-float transition-transform duration-300 group-hover:scale-125" />
@@ -718,21 +795,21 @@ export function Dashboard({
             <div className="paper-colored group flex items-center justify-between rounded-rough border border-ink/15 bg-paper-50 px-4 py-2.5 shadow-sticker-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-paper">
               <span className="text-sm font-semibold">CGPA</span>
               <span className="cutout-heading text-2xl">
-                {student.cgpa}
+                {student?.cgpa}
               </span>
             </div>
 
             <div className="paper-colored group flex items-center justify-between rounded-rough border border-ink/15 bg-paper-50 px-4 py-2.5 shadow-sticker-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-paper">
               <span className="text-sm font-semibold">Semester</span>
               <span className="cutout-heading text-2xl">
-                {student.semester}
+                {student?.semester}
               </span>
             </div>
 
             <div className="paper-colored group flex items-center justify-between rounded-rough border border-ink/15 bg-paper-50 px-4 py-2.5 shadow-sticker-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-paper">
               <span className="text-sm font-semibold">Branch</span>
               <span className="font-hand text-lg">
-                {student.branch.split(' ')[0]}
+                {student?.branch.split(' ')[0]}
               </span>
             </div>
 
