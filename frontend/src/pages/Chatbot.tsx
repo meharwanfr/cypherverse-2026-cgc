@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Sparkles, Trash2, LoaderCircle } from 'lucide-react';
 import { DoodleField } from '@/components/DoodleField';
 import { StickerCard, SectionHeading, StickerButton } from '@/components/Sticker';
+import { Markdown } from '@/components/Markdown';
 import { api, type ChatMessage } from '@/lib/api';
 import { useToast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
@@ -119,7 +120,11 @@ export function Chatbot() {
                     : 'bg-paper-50'
                 )}
               >
-                <p className="font-hand text-2xl font-bold leading-snug text-ink whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'user' ? (
+                  <p className="font-hand text-2xl font-bold leading-snug text-ink whitespace-pre-wrap">{msg.content}</p>
+                ) : (
+                  <Markdown content={msg.content} />
+                )}
                 <p className="mt-1 text-[11px] font-semibold text-ink/40 text-right">
                   {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                 </p>
